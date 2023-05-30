@@ -7,7 +7,8 @@ module ALU #(
     input  [3:0]                    opcode,
     output logic                    halt,
     output logic                    branch_valid,
-    output logic [DATA_WIDTH-1:0]   result
+    output logic [DATA_WIDTH-1:0]   result,
+    output logic [4:0]              status_state
 );
 
     logic [4:0] status; //Save status for conditional brances
@@ -101,11 +102,13 @@ module ALU #(
         endcase        
     end
     
+    
     assign status[0] = carry;   //Set Carry
     assign status[1] = result[7:0] ^ result[15:8]; //Set Parity
     assign status[2] = (opcode == BRA) ? status[2] : ~result[0]; //Set Even
     assign status[3] = result < 0 ? 1'b1 : 1'b0; //Set Neg
     assign status[4] = result == 0 ? 1'b1 : 1'b0; //Set Zero
+    assign status_state = status;
     
 
 endmodule

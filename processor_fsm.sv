@@ -6,7 +6,13 @@ module processor_fsm#(
     input reset,
     input [ADDRESS_WIDTH-1:0] ram_init_wadrs,
     input [DATA_WIDTH-1:0] ram_write_instruction,
-    input initialize_instructions
+    input initialize_instructions,
+    output logic [2:0] cur_state,
+    output logic cur_halt,
+    output logic cur_branch_valid,
+    output logic [31:0] cur_result,
+    output logic [31:0] cur_instruction,
+    output logic [4:0] cur_status
 );
 
     //Holds current state
@@ -15,6 +21,7 @@ module processor_fsm#(
     //ALU Parts
     logic           branch_valid;
     logic           halt;
+    logic [4:0]     status;
     
     //File Reg
     logic  w_en;
@@ -61,6 +68,17 @@ module processor_fsm#(
     localparam WRITE_BACK = 3'b110;
     localparam HALT       = 3'b111;
     
+    //Opcode enums
+    localparam NOP = 4'b0000;
+    localparam LD  = 4'b0001;
+    localparam STR = 4'b0010;
+    localparam BRA = 4'b0011;
+    localparam XOR = 4'b0100;
+    localparam ADD = 4'b0101;
+    localparam SHL = 4'b0110;
+    localparam SHR = 4'b0111;
+    localparam HLT = 4'b1000;
+    localparam CMP = 4'b1001;    
     
     
     always_ff @(posedge clk) begin        
@@ -122,11 +140,18 @@ module processor_fsm#(
     
     assign w_en = (state == STORE) & dest_type; //Set w_en for file reg 
     assign ram_w_adrs = (state == WRITE) ?  ram_init_wadrs : dest_adrs; //Set write address to ram
-    assign src_reg_in = (opcode == 4'b0010) ? ram_r_data :  src_reg_read; //Set src reg, for STORE (src == memory, dest== reg)
-    assign ram_w_en = (((opcode == 4'b0001) && (state == WRITE_BACK))) ||  initialize_instructions; //Write to ram on load or init
+    assign src_reg_in = (opcode == 4'b0001) ? ram_r_data :  src_reg_read; //Set src reg, for LD (src == memory, dest== reg)
+    assign ram_w_en = (((opcode == 4'b0010) && (state == WRITE_BACK))) ||  initialize_instructions; //Write to ram on STORE or init
     assign ram_w_data = (state == WRITE) ? ram_write_instruction : result; //Set data to write to ram, either result or init
     assign ram_r_adrs = (state == FETCH) ? pc : r_adrs_two;
-    assign ram_r_en = (state == FETCH) || ((state == EXECUTE) && (opcode == 4'b0010));
+    assign ram_r_en = (state == FETCH) || ((state == EXECUTE) && (opcode == 4'b0001));
+    assign cur_state = state;
+    assign cur_result = result;
+    assign cur_halt = halt;
+    assign cur_instruction = instruction;
+    assign cur_status = status;
+    assign cur_branch_valid = branch_valid;
+    
         
     //Instances of components
     program_counter #(
@@ -178,6 +203,7 @@ module processor_fsm#(
         .cc(cc),
         .opcode(opcode),
         .halt(halt),
+        .status_state(status),
         .branch_valid(branch_valid),
         .result(result)
     );

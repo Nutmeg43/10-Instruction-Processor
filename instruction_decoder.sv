@@ -25,7 +25,7 @@ module instruction_decoder#(
         operand_one = (instruction[26] & (opcode != 4'b0011)) ? dest_reg_read : instruction[11:0]; //Always take address on branch
         dest_type = instruction[26] & (opcode != 4'b0011); //Make sure we don't try and write on a branch
         r_en_one = instruction[26];
-        r_en_two = instruction[27];
+        r_en_two = instruction[27] | (opcode == 4'b0010);
         r_adrs_one = instruction[11:0];
         r_adrs_two = instruction[23:12];
         dest_adrs = instruction[11:0];

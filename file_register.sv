@@ -22,7 +22,7 @@ module file_register #(
     always_ff @ (negedge clk) begin
         if(reset) begin
             for(i = 0; i < 2**ADDRESS_WIDTH; i++) begin
-                memory[i] <= 32'h000_000f;
+                memory[i] <= 32'h000_0000;
             end
             r_data_one <= '0;
             r_data_two <= '0;

@@ -1,3 +1,8 @@
+`include "uvm.sv"
+import uvm_pkg::*;
+`include "processor_intf.sv"
+import processor_pkg::*;
+
 module J_10_tb#(
     DATA_WIDTH = 32,
     ADDRESS_WIDTH = 12
@@ -8,20 +13,50 @@ module J_10_tb#(
     logic [ADDRESS_WIDTH-1:0] ram_init_wadrs;
     logic [DATA_WIDTH-1:0] ram_write_instruction;
     logic initialize_instructions;
+    logic [2:0] cur_state;   
+    logic cur_halt;  
+    logic [31:0] cur_result;
+    logic [31:0] cur_instruction;
+    logic cur_branch_valid;
+    logic [4:0] cur_status;
+    
+    processor_intf #(
+        .DATA_WIDTH(DATA_WIDTH),
+        .ADDRESS_WIDTH(ADDRESS_WIDTH)
+    ) processor_intf_instance(
+        .clk(clk)
+    );
+    
+    
     
     processor_fsm #(
         .DATA_WIDTH(DATA_WIDTH),
         .ADDRESS_WIDTH(ADDRESS_WIDTH)
-    ) processor_fsm_instance(
+    ) processor_intf(
         .clk(clk),
-        .reset(reset),
-        .ram_init_wadrs(ram_init_wadrs),
-        .ram_write_instruction(ram_write_instruction),
-        .initialize_instructions(initialize_instructions)
+        .reset(processor_intf_instance.reset),
+        .ram_init_wadrs(processor_intf_instance.ram_init_wadrs),
+        .ram_write_instruction(processor_intf_instance.ram_write_instruction),
+        .initialize_instructions(processor_intf_instance.initialize_instructions),
+        .cur_halt(processor_intf_instance.cur_halt),
+        .cur_state(processor_intf_instance.cur_state),
+        .cur_result(processor_intf_instance.cur_result),
+        .cur_instruction(processor_intf_instance.cur_instruction),
+        .cur_branch_valid(processor_intf_instance.cur_branch_valid),
+        .cur_status(processor_intf_instance.cur_status)
     );
     
     always #5 clk = ~clk;
     
+    
+    initial begin
+        clk = 0;
+        uvm_config_db#(virtual processor_intf)::set(null, "*", "processor_intf", processor_intf_instance);
+        run_test("processor_test");
+        $stop();
+    end
+    
+    /*
     initial begin
        clk = 0;
        reset = 1;
@@ -41,12 +76,13 @@ module J_10_tb#(
        ram_write_instruction = 32'b0001_1_0_00_000000000011_000000000111; //Says "LD R3 MEM7" 
        #10
        ram_init_wadrs = 12'b000000001011;
-       ram_write_instruction = 32'b0010_0_1_00_000000000111_000000000000; //Says "LD R3 MEM7" 
+       ram_write_instruction = 32'b0010_0_1_00_000000000111_000000000000; //Says "STR R0 MEM7" 
        #10
        ram_init_wadrs = 12'b000000001100;
-       ram_write_instruction = 32'b0110_0_1_00_000000000101_000000000000; //Says "LD R3 MEM7" 
+       ram_write_instruction = 32'b0110_0_1_00_000000000101_000000000000; //Says "SHL R0 5" 
        #10
        initialize_instructions = 0;        
-    end
+   end
+   * */
     
 endmodule
